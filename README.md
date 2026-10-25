@@ -4,7 +4,7 @@ A responsive public homepage for the congregation's photo and video archive, bac
 
 ## Current homepage
 
-The root route includes the shared site header and navigation, an editorial archive introduction, featured albums, an archive-browsing introduction, and the shared footer. Album data has a typed boundary in `frontend/src/lib/albums.ts`. Production album data remains empty until published records are connected, so the homepage displays its prepared empty state. Album cards link to `/gallery/:slug` when records exist. Album details use a separate media lookup, show an empty state when there are no media items, and provide a native-dialog photo viewer and browser-controlled video playback.
+The root route includes the shared site header and navigation, an editorial archive introduction, searchable album results, archive filters, and the shared footer. Search matches album title, explicit event/category metadata, and valid event year; filter options are derived from published records. Production album data remains empty until published records are connected, so the homepage displays its prepared empty state and metadata filters remain unavailable. Album cards link to `/gallery/:slug` when records exist. Album details use a separate media lookup, show an empty state when there are no media items, and provide a native-dialog photo viewer and browser-controlled video playback.
 
 Development mode includes one explicitly marked empty-album preview record for checking album routing and empty-state behavior. It contains no photographs, video, or invented church history, and is excluded from production builds. No safe demonstration photo or video was supplied, so the photo viewer and video player need suitable media records to be exercised manually.
 
@@ -42,11 +42,16 @@ Run these commands from `frontend/` before submitting changes:
 ```sh
 npm run typecheck
 npm run lint
+npm run test
 npm run build
 ```
 
 ## Brand and design
 
-Original supplied logo files are in `frontend/public/brand/`; see `frontend/src/styles/brand-assets.md` for variant guidance. The official Church of the Nazarene style guide PDF is retained in `frontend/public/`. The interface uses the supplied neutral and accent palette, with Lato bundled locally for body and heading use. Brandon Grotesque is not loaded because no licensed font files were supplied. A Remera church-name logo was not supplied, so the local church name appears as surrounding page text. Logo artwork has not been recreated or recolored.
+Original supplied logo files are in `frontend/public/brand/`; see `frontend/src/styles/brand-assets.md` for variant guidance. The official Church of the Nazarene style guide PDF is kept as a local reference only and is intentionally excluded from the repository and the built site. The interface uses the supplied neutral and accent palette, with Lato bundled locally for body and heading use. Brandon Grotesque is not loaded because no licensed font files were supplied. A Remera church-name logo was not supplied, so the local church name appears as surrounding page text. Logo artwork has not been recreated or recolored.
 
 The shared shell and homepage use semantic landmarks, a skip link, visible keyboard focus, responsive layouts, and reduced-motion handling. No genuine congregation photography was supplied; the homepage uses a text-led composition and does not present placeholder imagery as archive content.
+
+## Theme preference
+
+Use the **Theme** control in the site header to choose **Light**, **Dark**, or **System**. System is the initial preference and follows the device's light or dark setting; explicit choices are saved in local storage. If browser storage is unavailable, the chosen appearance still applies for the current visit. The supplied grey logo variants are used on light surfaces and the original white variants are used on dark surfaces.

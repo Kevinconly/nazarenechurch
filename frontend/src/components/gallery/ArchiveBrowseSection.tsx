@@ -16,8 +16,8 @@ export function ArchiveBrowseSection({ hasAlbums }: { hasAlbums: boolean }) {
         </div>
         <p className="browse-section__note">
           {hasAlbums
-            ? 'Browse options will appear alongside published collections as they become available.'
-            : 'Browsing options will appear as published albums are added to the collection.'}
+            ? 'Search and filter published albums by title, event, category, or year using the archive controls above.'
+            : 'Search and filters are ready to explore published albums as they are added to the collection.'}
         </p>
       </Container>
     </section>

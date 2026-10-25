@@ -1,3 +1,5 @@
+import { useTheme } from '../../app/ThemeProvider'
+
 type LogoVariant = 'grey' | 'white' | 'black' | 'extended-grey' | 'extended-white'
 
 const assets: Record<LogoVariant, string> = {
@@ -11,5 +13,12 @@ const assets: Record<LogoVariant, string> = {
 type LogoProps = { variant?: LogoVariant; className?: string }
 
 export function Logo({ variant = 'extended-grey', className = '' }: LogoProps) {
-  return <img className={`brand-logo ${className}`.trim()} src={assets[variant]} alt="Church of the Nazarene" />
+  const { resolvedTheme } = useTheme()
+  const darkVariants: Partial<Record<LogoVariant, LogoVariant>> = {
+    grey: 'white',
+    black: 'white',
+    'extended-grey': 'extended-white',
+  }
+  const themeAwareVariant = resolvedTheme === 'dark' ? darkVariants[variant] ?? variant : variant
+  return <img className={`brand-logo ${className}`.trim()} src={assets[themeAwareVariant]} alt="Church of the Nazarene" />
 }

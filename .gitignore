@@ -1,6 +1,10 @@
 node_modules/
 dist/
 coverage/
+frontend/.test-dist/
+
+# Local reference only: the style guide PDF must never be committed or published.
+**/Church of the Nazarene Style Guide*.pdf
 .env
 .env.*
 !.env.example

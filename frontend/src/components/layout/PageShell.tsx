@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Container } from '../ui/Container'
 import { Divider } from '../ui/Divider'
 import { Logo } from '../ui/Logo'
+import { ThemeControl } from './ThemeControl'
 
 type PageShellProps = {
   children: ReactNode
@@ -18,10 +19,13 @@ export function PageShell({ children, activePage = 'home' }: PageShellProps) {
             <Logo />
             <span className="brand-name">Remera</span>
           </a>
-          <nav className="site-nav" aria-label="Main navigation">
-            <a href="/" aria-current={activePage === 'home' ? 'page' : undefined}>Home</a>
-            <a href="/#gallery" aria-current={activePage === 'album' ? 'page' : undefined}>Gallery</a>
-          </nav>
+          <div className="header-actions">
+            <nav className="site-nav" aria-label="Main navigation">
+              <a href="/" aria-current={activePage === 'home' ? 'page' : undefined}>Home</a>
+              <a href="/#gallery" aria-current={activePage === 'album' ? 'page' : undefined}>Gallery</a>
+            </nav>
+            <ThemeControl />
+          </div>
         </Container>
       </header>
       {children}

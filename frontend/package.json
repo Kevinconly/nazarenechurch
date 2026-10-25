@@ -8,6 +8,7 @@
     "build": "vite build",
     "typecheck": "tsc -b",
     "lint": "eslint .",
+    "test": "tsc --ignoreConfig --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --skipLibCheck --esModuleInterop --types node --outDir .test-dist --rootDir . tests/archiveSearch.test.ts src/lib/archiveSearch.ts && node --test .test-dist/tests/archiveSearch.test.js",
     "preview": "vite preview"
   },
   "dependencies": {

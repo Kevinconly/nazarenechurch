@@ -66,7 +66,7 @@
   padding: 12px 15px;
   border-left: 2px solid var(--warning);
   color: var(--warning);
-  background: #f7f4ed;
+  background: var(--warning-surface);
   font-size: 13px;
   line-height: 1.55;
 }
@@ -191,14 +191,14 @@
   margin: auto;
   padding: 0;
   overflow: hidden;
-  border: 1px solid #5b5d5f;
+  border: 1px solid var(--viewer-border);
   border-radius: var(--radius);
-  color: #fff;
-  background: #292a2b;
+  color: var(--viewer-text);
+  background: var(--viewer-background);
 }
 
 .photo-viewer::backdrop {
-  background: rgb(24 25 26 / 88%);
+  background: var(--viewer-backdrop);
 }
 
 .photo-viewer[open] {
@@ -217,7 +217,7 @@
 }
 
 .photo-viewer__position {
-  color: #f2f2f2;
+  color: var(--viewer-text);
   font-size: 13px;
   font-variant-numeric: tabular-nums;
 }
@@ -229,24 +229,24 @@
   flex: 0 0 44px;
   place-items: center;
   padding: 0;
-  border: 1px solid #6a6b6d;
+  border: 1px solid var(--viewer-control-border);
   border-radius: var(--radius);
-  color: #fff;
+  color: var(--viewer-text);
   background: transparent;
   cursor: pointer;
 }
 
 .icon-button:hover:not(:disabled) {
-  background: #414244;
+  background: var(--viewer-control-hover);
 }
 
 .icon-button:disabled {
-  color: #a4a5a6;
+  color: var(--viewer-muted);
   cursor: not-allowed;
 }
 
 .icon-button:focus-visible {
-  outline-color: #fff;
+  outline-color: var(--viewer-text);
 }
 
 .photo-viewer__figure {
@@ -271,7 +271,7 @@
 .photo-viewer__figure figcaption {
   max-width: 760px;
   padding: 12px 0 5px;
-  color: #f2f2f2;
+  color: var(--viewer-text);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -283,9 +283,9 @@
 
 .photo-viewer .media-unavailable {
   min-width: min(360px, 80vw);
-  border-color: #646567;
-  color: #f2f2f2;
-  background: #363739;
+  border-color: var(--viewer-border);
+  color: var(--viewer-text);
+  background: var(--viewer-panel);
 }
 
 .visually-hidden {

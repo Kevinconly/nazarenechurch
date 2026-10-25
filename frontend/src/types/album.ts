@@ -13,6 +13,11 @@ export type Album = {
   slug: string
   title: string
   description?: string
+  /** Explicit event name; do not infer this value from the title or description. */
+  eventName?: string
+  /** Explicit archive category assigned to the album. */
+  category?: string
+  /** ISO-8601 calendar date or date-time for the event represented by this album. */
   eventDate?: string
   publishedAt?: string
   status: AlbumStatus
