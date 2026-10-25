@@ -5,6 +5,9 @@ frontend/.test-dist/
 
 # Local reference only: the style guide PDF must never be committed or published.
 **/Church of the Nazarene Style Guide*.pdf
+
+# TLS trust anchors are provisioned out-of-band, never committed.
+backend/certs/
 .env
 .env.*
 !.env.example
