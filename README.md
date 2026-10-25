@@ -4,7 +4,9 @@ A responsive public homepage for the congregation's photo and video archive, bac
 
 ## Current homepage
 
-The root route includes the shared site header and navigation, an editorial archive introduction, featured albums, an archive-browsing introduction, and the shared footer. Album data has a typed boundary in `frontend/src/lib/albums.ts`. Until published albums are connected, it returns an empty collection and the homepage displays its prepared empty state. No preview fixtures are included. Album cards are ready for real published records, but album-detail routes are not part of this milestone.
+The root route includes the shared site header and navigation, an editorial archive introduction, featured albums, an archive-browsing introduction, and the shared footer. Album data has a typed boundary in `frontend/src/lib/albums.ts`. Production album data remains empty until published records are connected, so the homepage displays its prepared empty state. Album cards link to `/gallery/:slug` when records exist. Album details use a separate media lookup, show an empty state when there are no media items, and provide a native-dialog photo viewer and browser-controlled video playback.
+
+Development mode includes one explicitly marked empty-album preview record for checking album routing and empty-state behavior. It contains no photographs, video, or invented church history, and is excluded from production builds. No safe demonstration photo or video was supplied, so the photo viewer and video player need suitable media records to be exercised manually.
 
 ## Prerequisites
 

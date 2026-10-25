@@ -10,6 +10,8 @@ type FeaturedAlbumsSectionProps = {
 }
 
 export function FeaturedAlbumsSection({ albums }: FeaturedAlbumsSectionProps) {
+  const publishedAlbumCount = albums.filter((album) => !album.developmentPreview).length
+
   return (
     <section className="featured-section" id="gallery" aria-labelledby="featured-heading">
       <Container>
@@ -23,7 +25,7 @@ export function FeaturedAlbumsSection({ albums }: FeaturedAlbumsSectionProps) {
               level="section"
             />
           </div>
-          {albums.length > 0 && <span className="featured-section__count">{albums.length} published {albums.length === 1 ? 'album' : 'albums'}</span>}
+          {publishedAlbumCount > 0 && <span className="featured-section__count">{publishedAlbumCount} published {publishedAlbumCount === 1 ? 'album' : 'albums'}</span>}
         </div>
         {albums.length > 0 ? (
           <div className="album-grid">

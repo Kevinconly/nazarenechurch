@@ -20,4 +20,6 @@ export type Album = {
   mediaType: MediaKind
   mediaCount?: number
   createdAt: string
+  /** Set only on records from the explicitly development-only preview module. */
+  developmentPreview?: true
 }

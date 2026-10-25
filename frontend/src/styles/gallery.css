@@ -189,6 +189,19 @@
   min-width: 0;
 }
 
+.album-card__link {
+  display: block;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+.album-card__link:hover h3 {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
 .album-card__cover {
   overflow: hidden;
   aspect-ratio: 4 / 3;
@@ -213,7 +226,7 @@
 }
 
 .album-card__cover-placeholder::after {
-  content: "Album cover not provided";
+  content: "Album cover unavailable";
 }
 
 .album-card__body {
@@ -254,6 +267,15 @@
   margin-top: 10px;
   color: var(--text-secondary);
   font-size: 12px;
+}
+
+.development-preview-label {
+  display: inline-block;
+  margin-top: 10px;
+  color: var(--warning);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
 }
 
 .browse-section {

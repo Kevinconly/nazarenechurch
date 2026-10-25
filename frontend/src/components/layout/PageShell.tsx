@@ -3,7 +3,12 @@ import { Container } from '../ui/Container'
 import { Divider } from '../ui/Divider'
 import { Logo } from '../ui/Logo'
 
-export function PageShell({ children }: { children: ReactNode }) {
+type PageShellProps = {
+  children: ReactNode
+  activePage?: 'home' | 'album'
+}
+
+export function PageShell({ children, activePage = 'home' }: PageShellProps) {
   return (
     <div className="page-shell">
       <a className="skip-link" href="#main-content">Skip to main content</a>
@@ -14,8 +19,8 @@ export function PageShell({ children }: { children: ReactNode }) {
             <span className="brand-name">Remera</span>
           </a>
           <nav className="site-nav" aria-label="Main navigation">
-            <a href="/" aria-current="page">Home</a>
-            <a href="#gallery">Gallery</a>
+            <a href="/" aria-current={activePage === 'home' ? 'page' : undefined}>Home</a>
+            <a href="/#gallery" aria-current={activePage === 'album' ? 'page' : undefined}>Gallery</a>
           </nav>
         </Container>
       </header>
