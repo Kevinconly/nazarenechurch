@@ -1,15 +1,19 @@
 # Church of the Nazarene — Remera Archive
 
-Foundation milestone for the congregation's photo and video archive. This repository contains a React/TypeScript frontend and a separate Express/TypeScript API. The public gallery and archive content are future milestones; this scaffold does not imply that historical media is already available.
+A responsive public homepage for the congregation's photo and video archive, backed by a separate Express API foundation. The homepage is ready to connect to published album data; it does not invent or preview historical church content.
+
+## Current homepage
+
+The root route includes the shared site header and navigation, an editorial archive introduction, featured albums, an archive-browsing introduction, and the shared footer. Album data has a typed boundary in `frontend/src/lib/albums.ts`. Until published albums are connected, it returns an empty collection and the homepage displays its prepared empty state. No preview fixtures are included. Album cards are ready for real published records, but album-detail routes are not part of this milestone.
 
 ## Prerequisites
 
 - Node.js 20.19+ (or 22.12+) and npm.
-- Install each application independently with `npm install` from `frontend/` and `backend/`.
+- Install dependencies independently in `frontend/` and `backend/` with `npm install`.
 
 ## Local configuration
 
-Copy the root `.env.example` to `backend/.env` and adjust values if needed. The API defaults to port 3001 and only allows the Vite development origin `http://localhost:5173` for CORS. Set `FRONTEND_ORIGIN` to the exact frontend origin when using another host or port. No frontend secrets are needed. The Vite dev server proxies `/api` to `http://localhost:3001`.
+Copy the root `.env.example` to `backend/.env` and adjust values if needed. The API defaults to port 3001 and only allows the Vite development origin `http://localhost:5173` for CORS. Set `FRONTEND_ORIGIN` to the exact frontend origin when using another host or port. No frontend secrets are needed. The Vite development server proxies `/api` to `http://localhost:3001`.
 
 ## Development
 
@@ -29,15 +33,18 @@ npm run dev
 
 Open the Vite URL printed in the frontend terminal. The API health check is `GET http://localhost:3001/api/health` and returns `{ "status": "ok", "service": "remera-archive-api" }`.
 
-## Quality checks
+## Frontend checks
+
+Run these commands from `frontend/` before submitting changes:
 
 ```sh
-cd frontend && npm run typecheck && npm run lint && npm run build
-cd backend && npm run build
+npm run typecheck
+npm run lint
+npm run build
 ```
 
 ## Brand and design
 
-Original supplied logo files are in `frontend/public/brand/`; see `frontend/src/styles/brand-assets.md` for variant guidance. The original Church of the Nazarene style guide PDF is retained in `frontend/public/`. Interface tokens use the supplied neutral and accent palette, Lato is bundled locally for body and heading use, and Brandon Grotesque is not loaded because no licensed font files were supplied. A Remera church-name logo was not supplied; the local church name is presented as page text. No logo artwork has been recreated or recolored.
+Original supplied logo files are in `frontend/public/brand/`; see `frontend/src/styles/brand-assets.md` for variant guidance. The official Church of the Nazarene style guide PDF is retained in `frontend/public/`. The interface uses the supplied neutral and accent palette, with Lato bundled locally for body and heading use. Brandon Grotesque is not loaded because no licensed font files were supplied. A Remera church-name logo was not supplied, so the local church name appears as surrounding page text. Logo artwork has not been recreated or recolored.
 
-The shell is responsive and uses visible keyboard focus, a skip link, semantic landmarks, and reduced-motion handling. Its photo area is explicitly labeled as a placeholder and does not contain fabricated historical media.
+The shared shell and homepage use semantic landmarks, a skip link, visible keyboard focus, responsive layouts, and reduced-motion handling. No genuine congregation photography was supplied; the homepage uses a text-led composition and does not present placeholder imagery as archive content.
