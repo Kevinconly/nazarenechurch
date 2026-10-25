@@ -15,7 +15,9 @@ Development mode includes one explicitly marked empty-album preview record for c
 
 ## Local configuration
 
-Copy the root `.env.example` to `backend/.env` and adjust values if needed. The API defaults to port 3001 and only allows the Vite development origin `http://localhost:5173` for CORS. Set `FRONTEND_ORIGIN` to the exact frontend origin when using another host or port. No frontend secrets are needed. The Vite development server proxies `/api` to `http://localhost:3001`.
+Copy the root `.env.example` to `backend/.env` and replace the `DATABASE_URL` placeholders with a PostgreSQL connection URL. The API defaults to port 3001 and only allows the Vite development origin `http://localhost:5173` for CORS. Set `FRONTEND_ORIGIN` to the exact frontend origin when using another host or port. No frontend secrets are needed. The Vite development server proxies `/api` to `http://localhost:3001`.
+
+The backend uses PostgreSQL through the `pg` driver and reviewed SQL migrations (no ORM). Create an empty database named `remera_archive`, configure `DATABASE_URL`, then run `cd backend && npm run migrate` once before starting the API. TLS certificate verification is enabled. If the database certificate is not in Node's trust store, download the database CA certificate from the provider and set `DATABASE_SSL_CA_FILE` to its local path. The initial migration creates constrained `albums` and `media` tables; both default to unpublished (`draft`). The API's public routes only return published albums and media. Test records exist only in automated tests, not as archive content.
 
 ## Development
 
@@ -33,7 +35,17 @@ npm install
 npm run dev
 ```
 
-Open the Vite URL printed in the frontend terminal. The API health check is `GET http://localhost:3001/api/health` and returns `{ "status": "ok", "service": "remera-archive-api" }`.
+Open the Vite URL printed in the frontend terminal. The API health check is `GET http://localhost:3001/api/health` and returns `{ "status": "ok", "service": "remera-archive-api" }`. Public album pages are `GET /api/albums?page=1&pageSize=20`; published album media is `GET /api/albums/:slug/media?page=1&pageSize=20`. Page size is limited to 100. Both return `items`, `page`, `pageSize`, `total`, and `totalPages`.
+
+## Backend checks
+
+Run from `backend/`:
+
+```sh
+npm run typecheck
+npm test
+npm run build
+```
 
 ## Frontend checks
 
