@@ -5,6 +5,8 @@ import { FeaturedAlbumsSection } from '../components/gallery/FeaturedAlbumsSecti
 import { HeroSection } from '../components/gallery/HeroSection'
 import { PageShell } from '../components/layout/PageShell'
 import { getPublishedAlbums } from '../lib/albums'
+import { SignInPage } from '../components/auth/SignInPage'
+import { AdminPage } from '../components/auth/AdminPage'
 
 function GalleryHomePage() {
   const albums = getPublishedAlbums()
@@ -25,6 +27,8 @@ export default function App() {
     <Routes>
       <Route path="/" element={<GalleryHomePage />} />
       <Route path="/gallery/:slug" element={<AlbumDetailPage />} />
+      <Route path="/admin/sign-in" element={<SignInPage />} />
+      <Route path="/admin" element={<AdminPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

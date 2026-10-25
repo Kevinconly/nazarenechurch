@@ -3,13 +3,19 @@ import { Container } from '../ui/Container'
 import { Divider } from '../ui/Divider'
 import { Logo } from '../ui/Logo'
 import { ThemeControl } from './ThemeControl'
+import { Link } from 'react-router-dom'
+import { useAuth } from '../../app/AuthProvider'
+import { useState } from 'react'
+import { LogIn, ShieldCheck } from 'lucide-react'
 
 type PageShellProps = {
   children: ReactNode
-  activePage?: 'home' | 'album'
+  activePage?: 'home' | 'album' | 'staff'
 }
 
 export function PageShell({ children, activePage = 'home' }: PageShellProps) {
+  const auth = useAuth()
+  const [signOutError, setSignOutError] = useState('')
   return (
     <div className="page-shell">
       <a className="skip-link" href="#main-content">Skip to main content</a>
@@ -23,9 +29,12 @@ export function PageShell({ children, activePage = 'home' }: PageShellProps) {
             <nav className="site-nav" aria-label="Main navigation">
               <a href="/" aria-current={activePage === 'home' ? 'page' : undefined}>Home</a>
               <a href="/#gallery" aria-current={activePage === 'album' ? 'page' : undefined}>Gallery</a>
+              {auth.user ? <Link className="staff-nav-link" to="/admin" aria-label={auth.user.role} aria-current={activePage === 'staff' ? 'page' : undefined}><ShieldCheck aria-hidden="true" /><span>{auth.user.role}</span></Link> : <Link className="staff-nav-link" to="/admin/sign-in" aria-label="Staff sign in" aria-current={activePage === 'staff' ? 'page' : undefined}><LogIn aria-hidden="true" /><span>Staff sign in</span></Link>}
             </nav>
             <ThemeControl />
+            {auth.user && <button className="sign-out-button" type="button" onClick={() => { setSignOutError(''); void auth.signOut().catch(() => setSignOutError('Sign-out failed. Please try again.')) }}>Sign out</button>}
           </div>
+          {signOutError && <span className="sign-out-error" role="alert">{signOutError}</span>}
         </Container>
       </header>
       {children}

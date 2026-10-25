@@ -67,3 +67,23 @@ The shared shell and homepage use semantic landmarks, a skip link, visible keybo
 ## Theme preference
 
 Use the **Theme** control in the site header to choose **Light**, **Dark**, or **System**. System is the initial preference and follows the device's light or dark setting; explicit choices are saved in local storage. If browser storage is unavailable, the chosen appearance still applies for the current visit. The supplied grey logo variants are used on light surfaces and the original white variants are used on dark surfaces.
+
+## Staff authentication and roles
+
+In local development, if `SESSION_SECRET` is omitted, the backend generates an ephemeral random secret; restarting the backend invalidates local sessions. In production, `SESSION_SECRET` is mandatory and must be a unique random value with at least 32 bytes, held in the deployment's secret manager.
+
+Run `cd backend && npm run migrate` to apply the user and server-side session migration. Set `SESSION_SECRET` to a unique random value of at least 32 bytes for production. `NODE_ENV=production` enables secure cookies; serve the application over HTTPS and use an exact `FRONTEND_ORIGIN`. The session cookie is HTTP-only, SameSite=Lax, path `/`, and expires after eight hours. Sessions are stored in PostgreSQL and invalidated on sign-out; inactive users are rechecked against the database on protected requests. The browser obtains a session-bound CSRF token from `/api/auth/csrf` and sends it in `X-CSRF-Token` for sign-in, sign-out, and account changes. Authentication requests are rate limited. Same-origin reverse proxying is recommended; cross-origin deployments must use credentials and the exact configured frontend origin.
+
+Provision the first Administrator from an interactive backend terminal after migrations: `cd backend && npm run provision-admin`. Enter the email and password at the prompts; password input is not echoed and is never supplied as a command argument. Provisioning refuses to add another initial Administrator once one exists. Sign in at `/admin/sign-in`; the header provides sign-out. Administrators can create accounts and change roles/account status at `/admin`. If the initial Administrator is unavailable, use a controlled database operator procedure to restore access; no public reset route is provided. Password reset, invitations, email verification, and archive editing are not implemented in this milestone.
+
+| Role | Permissions in this milestone |
+| --- | --- |
+| Contributor | Sign in and read own identity/role; no protected account or archive operations. |
+| Editor | Sign in and read own identity/role; no protected account or archive operations. |
+| Administrator | Read/create accounts, assign any of the three roles, and enable/disable other accounts. Administrators cannot change their own role/status; the final active Administrator cannot be disabled/demoted. |
+
+Public published-album routes remain available without a session. Backend role checks are authoritative; frontend route protection is only a user experience layer. Passwords are stored as bcrypt hashes and are never returned by the API. PostgreSQL TLS certificate verification stays enabled; set `DATABASE_SSL_CA_FILE` if the provider CA is not in Node's trust store. Production deployment still requires verified HTTPS/proxy behavior and a protected secret manager for `SESSION_SECRET`.
+
+For TLS-terminating reverse proxies, set TRUST_PROXY_HOPS to the exact number of trusted hops (default 0). Use HTTPS in production; SESSION_COOKIE_SECURE can enable Secure cookies during local HTTPS testing.
+
+Staff API endpoints are GET /api/auth/csrf, POST /api/auth/sign-in, GET /api/auth/me, POST /api/auth/sign-out, and admin-only GET/POST /api/admin/users plus PATCH /api/admin/users/:id. User passwords are 12+ characters and limited to 72 UTF-8 bytes because bcrypt has a 72-byte input boundary. The database stores only bcrypt password hashes, hashed session identifiers, and hashed CSRF tokens.
