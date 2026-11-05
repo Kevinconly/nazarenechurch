@@ -1,0 +1,3 @@
+ARG CLAMAV_BASE_IMAGE
+FROM ${CLAMAV_BASE_IMAGE}
+COPY clamd.conf /etc/clamav/clamd.conf

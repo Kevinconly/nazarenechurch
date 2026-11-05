@@ -1,23 +1,46 @@
-export type AppRole = 'Contributor' | 'Editor' | 'Administrator'
-export type AuthUser = { id: string; email: string; role: AppRole }
+import { getSupabaseClient, invokeSupabaseFunction } from './supabase'
 
-async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const response = await fetch(`/api${path}`, { ...init, credentials: 'include', headers: { 'Content-Type': 'application/json', ...init.headers } })
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({})) as { error?: string }
-    if (response.status === 401 && path !== '/auth/sign-in') window.dispatchEvent(new Event('auth:unauthorized'))
-    throw new Error(body.error ?? `Request failed (${response.status}).`)
-  }
-  if (response.status === 204) return undefined as T
-  return response.json() as Promise<T>
-}
+export type AppRole = 'SUPER_ADMIN' | 'MEDIA_ADMIN' | 'REGULAR_USER'
+export type AuthUser = { id: string; email: string; role: AppRole }
+export type ManagedUser = AuthUser & { active: boolean; createdAt: string }
 
 export const authApi = {
-  me: () => request<{ user: AuthUser }>('/auth/me'),
-  csrf: () => request<{ csrfToken: string }>('/auth/csrf'),
-  signIn: (email: string, password: string, csrfToken: string) => request<{ user: AuthUser; csrfToken: string }>('/auth/sign-in', { method: 'POST', headers: { 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ email, password }) }),
-  signOut: (csrfToken: string) => request<void>('/auth/sign-out', { method: 'POST', headers: { 'X-CSRF-Token': csrfToken } }),
-  listUsers: () => request<{ items: Array<AuthUser & { active: boolean; createdAt: string }> }>('/admin/users'),
-  createUser: (body: { email: string; password: string; role: AppRole }, csrfToken: string) => request<{ user: AuthUser }>('/admin/users', { method: 'POST', headers: { 'X-CSRF-Token': csrfToken }, body: JSON.stringify(body) }),
-  updateUser: (id: string, body: { role?: AppRole; active?: boolean }, csrfToken: string) => request<{ user: AuthUser }>('/admin/users/' + encodeURIComponent(id), { method: 'PATCH', headers: { 'X-CSRF-Token': csrfToken }, body: JSON.stringify(body) }),
+  async me(): Promise<{ user: AuthUser } | null> {
+    const client = getSupabaseClient()
+    const { data, error } = await client.auth.getSession()
+    if (error) throw new Error('Unable to check the current sign-in status.')
+    if (!data.session) return null
+    return invokeSupabaseFunction<{ user: AuthUser }>('archive/me')
+  },
+
+  async signIn(email: string, password: string): Promise<AuthUser> {
+    const { error } = await getSupabaseClient().auth.signInWithPassword({ email, password })
+    if (error) throw new Error('Invalid email or password.')
+    try {
+      const current = await authApi.me()
+      if (current) return current.user
+    } catch (failure) {
+      await getSupabaseClient().auth.signOut()
+      throw failure
+    }
+    await getSupabaseClient().auth.signOut()
+    throw new Error('This account is not authorized to sign in.')
+  },
+
+  async signOut(): Promise<void> {
+    const { error } = await getSupabaseClient().auth.signOut()
+    if (error) throw new Error('Sign-out failed. Please try again.')
+  },
+
+  listUsers: () => invokeSupabaseFunction<{ items: ManagedUser[] }>('admin-users'),
+
+  createUser: (body: { email: string; role: AppRole }) =>
+    invokeSupabaseFunction<{ user: ManagedUser }>('admin-users', 'POST', body),
+
+  updateUser: (id: string, body: { role?: AppRole; active?: boolean }) =>
+    invokeSupabaseFunction<{ user: AuthUser & { active: boolean } }>(
+      `admin-users/${encodeURIComponent(id)}`,
+      'PATCH',
+      body,
+    ),
 }

@@ -94,6 +94,8 @@ export function PhotoViewer({ photo, photos, onSelect, onClose, returnFocusRef }
           ) : (
             <img
               src={photo.src}
+              srcSet={photo.srcSet}
+              sizes="(min-width: 900px) 80vw, 95vw"
               alt={photo.alt}
               width={photo.width}
               height={photo.height}

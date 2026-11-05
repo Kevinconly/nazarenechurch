@@ -10,6 +10,8 @@ import './styles/index.css'
 import './styles/gallery.css'
 import './styles/album-detail.css'
 import './styles/auth.css'
+import './styles/media-admin.css'
+import './styles/design-tokens.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

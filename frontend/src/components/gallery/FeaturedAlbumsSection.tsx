@@ -10,9 +10,12 @@ import { AlbumCard } from './AlbumCard'
 
 type FeaturedAlbumsSectionProps = {
   albums: readonly Album[]
+  loading: boolean
+  error: string
+  onRetry: () => void
 }
 
-export function FeaturedAlbumsSection({ albums }: FeaturedAlbumsSectionProps) {
+export function FeaturedAlbumsSection({ albums, loading, error, onRetry }: FeaturedAlbumsSectionProps) {
   const [filters, setFilters] = useState<ArchiveFilters>(createEmptyArchiveFilters)
   const filterOptions = useMemo(() => getArchiveFilterOptions(albums), [albums])
   const filteredAlbums = useMemo(() => filterPublishedAlbums(albums, filters), [albums, filters])
@@ -101,7 +104,14 @@ export function FeaturedAlbumsSection({ albums }: FeaturedAlbumsSectionProps) {
         )}
 
         <div id="archive-results">
-          {!hasAlbums ? (
+          {loading ? (
+            <p className="archive-load-state" role="status">Loading published albums…</p>
+          ) : error ? (
+            <div className="featured-section__empty archive-load-error" role="alert">
+              <p>{error}</p>
+              <Button variant="outline" type="button" onClick={onRetry}>Try again</Button>
+            </div>
+          ) : !hasAlbums ? (
             <div className="featured-section__empty">
               <Divider />
               <EmptyState

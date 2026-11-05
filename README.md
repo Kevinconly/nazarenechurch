@@ -1,12 +1,28 @@
 # Church of the Nazarene — Remera Archive
 
-A responsive public homepage for the congregation's photo and video archive, backed by a separate Express API foundation. The homepage is ready to connect to published album data; it does not invent or preview historical church content.
+Responsive public gallery and administration UI for the congregation's photo
+archive. The active gallery now uses Supabase (Auth, Postgres, Storage, and Edge
+Functions) and a separate image-scanning worker; the Express/PostgreSQL backend
+and root Compose stack described below are a legacy deployment and are not
+connected to the Supabase-backed gallery. Neither stack is deployed by this
+repository change. Do not apply migrations to a production-like project without
+explicit approval.
 
 ## Current homepage
 
-The root route includes the shared site header and navigation, an editorial archive introduction, searchable album results, archive filters, and the shared footer. Search matches album title, explicit event/category metadata, and valid event year; filter options are derived from published records. Production album data remains empty until published records are connected, so the homepage displays its prepared empty state and metadata filters remain unavailable. Album cards link to `/gallery/:slug` when records exist. Album details use a separate media lookup, show an empty state when there are no media items, and provide a native-dialog photo viewer and browser-controlled video playback.
+The root route presents published Supabase albums, searchable/filterable results,
+and shared site navigation. Album details show responsive processed images with
+a keyboard- and touch-operable photo viewer. The `/admin` area requires a
+Supabase account and role; it supports album CRUD, bounded uploads, processing
+status/retry, and publish/unpublish/delete workflows. Empty and configuration
+errors are explicit; no historical content is fabricated.
 
-Development mode includes one explicitly marked empty-album preview record for checking album routing and empty-state behavior. It contains no photographs, video, or invented church history, and is excluded from production builds. No safe demonstration photo or video was supplied, so the photo viewer and video player need suitable media records to be exercised manually.
+The Supabase migrations, Edge Functions, and worker are implementation artifacts,
+not evidence of a deployed or operational service. Browser-level responsive
+verification and live Supabase integration remain outstanding; see
+[UI_AUDIT.md](UI_AUDIT.md),
+[MEDIA_SECURITY_AUDIT.md](MEDIA_SECURITY_AUDIT.md), and
+[docs/SUPABASE_MEDIA_DEPLOYMENT.md](docs/SUPABASE_MEDIA_DEPLOYMENT.md).
 
 ## Prerequisites
 
@@ -15,13 +31,19 @@ Development mode includes one explicitly marked empty-album preview record for c
 
 ## Local configuration
 
-Copy the root `.env.example` to `backend/.env` and replace the `DATABASE_URL` placeholders with a PostgreSQL connection URL. The API defaults to port 3001 and only allows the Vite development origin `http://localhost:5173` for CORS. Set `FRONTEND_ORIGIN` to the exact frontend origin when using another host or port. No frontend secrets are needed. The Vite development server proxies `/api` to `http://localhost:3001`.
+For the Supabase-backed frontend, copy `frontend/.env.example` to
+`frontend/.env` and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to the
+public project URL and anon/publishable key. The key can be supplied as
+`VITE_SUPABASE_ANON_KEY` or `VITE_SUPABASE_PUBLISHABLE_KEY`. These browser values are embedded
+at build time and are not service-role credentials. For the legacy backend,
+copy the root `.env.example` to `backend/.env` and set the PostgreSQL
+`DATABASE_URL`. Do not reuse production credentials for local testing.
 
 The backend uses PostgreSQL through the `pg` driver and reviewed SQL migrations (no ORM). Create an empty database named `remera_archive`, configure `DATABASE_URL`, then run `cd backend && npm run migrate` once before starting the API. TLS certificate verification is enabled. If the database certificate is not in Node's trust store, download the database CA certificate from the provider and set `DATABASE_SSL_CA_FILE` to its local path. The initial migration creates constrained `albums` and `media` tables; both default to unpublished (`draft`). The API's public routes only return published albums and media. Test records exist only in automated tests, not as archive content.
 
 ## Development
 
-Run the frontend and backend in separate terminals:
+Run the frontend in its own terminal after configuring `frontend/.env`:
 
 ```sh
 cd frontend
@@ -29,13 +51,14 @@ npm install
 npm run dev
 ```
 
-```sh
-cd backend
-npm install
-npm run dev
-```
+The Vite development server prints the local URL. It connects directly to the
+configured Supabase project. For a local Supabase stack, use the Supabase CLI
+and follow [the media deployment guide](docs/SUPABASE_MEDIA_DEPLOYMENT.md);
+Docker/Supabase CLI runtime checks were not performed for this change.
 
-Open the Vite URL printed in the frontend terminal. The API health check is `GET http://localhost:3001/api/health` and returns `{ "status": "ok", "service": "remera-archive-api" }`. Public album pages are `GET /api/albums?page=1&pageSize=20`; published album media is `GET /api/albums/:slug/media?page=1&pageSize=20`. Page size is limited to 100. Both return `items`, `page`, `pageSize`, `total`, and `totalPages`.
+The Express API under `backend/` and its `/api/*` routes remain available as a
+separate legacy application. They are not the current gallery data/auth
+boundary; avoid running it as though it supplies the Supabase gallery.
 
 ## Backend checks
 
@@ -73,12 +96,18 @@ Actions. Run the same checks locally with the commands in the sections above plu
 
 ## Container deployment
 
-The repository includes a multi-stage, non-root backend image, an unprivileged
-nginx frontend image, and a Compose file:
+The root Compose file deploys the **legacy Express/PostgreSQL app**, not the
+Supabase media worker. It remains separate from the current gallery integration.
+The frontend image accepts `VITE_SUPABASE_URL` and either
+`VITE_SUPABASE_ANON_KEY` or `VITE_SUPABASE_PUBLISHABLE_KEY` build args; configure those public values in the root
+`.env` before building it. The Supabase worker and ClamAV have a separate
+Compose file in `worker/compose.yaml`; see the deployment guide before operating
+it. Container execution has not been validated locally.
 
 ```sh
 cp .env.example .env
-# Set DATABASE_URL, SESSION_SECRET, FRONTEND_ORIGIN, and TRUST_PROXY_HOPS.
+# This root Compose stack is legacy. Set its backend values plus the public
+# VITE_SUPABASE_URL and either public client-key build value as appropriate.
 docker compose build
 docker compose run --rm backend node dist/db/migrate.js
 docker compose run --rm backend node dist/auth/provisionAdmin.js
@@ -96,15 +125,15 @@ See [docs/AWS_PRODUCTION.md](docs/AWS_PRODUCTION.md) for the AWS reference
 architecture, WAF/RDS/IAM/CloudWatch checklist, and migration/provisioning steps.
 The application-level threat mapping is in [SECURITY.md](SECURITY.md).
 
-## Production readiness and capability matrix
+## Legacy backend capability matrix
 
 | Capability | Status | Notes |
 | --- | --- | --- |
-| File uploads | **Not implemented** | No multipart handling or storage adapter. JSON bodies are limited to 16 KB. Do not publish an upload endpoint until S3/presigned uploads, magic-byte validation, size limits, malware scanning, and image re-encoding are designed. |
+| File uploads | **Not implemented in the legacy backend** | The separate Supabase media pipeline is implemented in migrations/functions/worker but not deployed or runtime-verified. |
 | Account management | **Partial** | Sign-in/out, server-side sessions, CSRF, Administrator create/list, role and status changes, self-change protection, and last-Administrator protection. Missing password reset, invitations, email verification, MFA, a durable audit log, and paginated user listing. |
 | Public single-photo link | **Not implemented** | Public media is exposed only as a paginated list at `GET /api/albums/:slug/media`. There is no single-media route or photo permalink. |
 | Custom albums / share links | **Partial** | Published albums are addressable by slug at `/gallery/:slug` and through `GET /api/albums/:slug/media`. Drafts return 404. There are no private share tokens, passwords, or expiring links. |
-| Search by event, category, year, or title | **Browser-only** | `frontend/src/lib/archiveSearch.ts` filters local album records by title, event name, category, and valid event year. The API has no search/filter parameters and rejects unknown query parameters. The production frontend currently uses an empty local album set, so it is not yet wired to the live API. |
+| Search by event, category, year, or title | **Legacy API: browser-only** | The Supabase frontend filters published albums it has loaded; pagination and live-project behavior still need runtime verification. |
 | Input validation | **Yes, current surface** | Every route validates the inputs it consumes; see the endpoint table below. |
 
 ### Endpoint validation
@@ -133,8 +162,10 @@ The shared shell and homepage use semantic landmarks, a skip link, visible keybo
 
 Use the **Theme** control in the site header to choose **Light**, **Dark**, or **System**. System is the initial preference and follows the device's light or dark setting; explicit choices are saved in local storage. If browser storage is unavailable, the chosen appearance still applies for the current visit. The supplied grey logo variants are used on light surfaces and the original white variants are used on dark surfaces.
 
-## Staff authentication and roles
+## Legacy Express staff authentication and roles
 
+This section describes the separate legacy Express backend only. Its
+Contributor/Editor/Administrator roles are not the Supabase gallery roles.
 In local development, if `SESSION_SECRET` is omitted, the backend generates an ephemeral random secret; restarting the backend invalidates local sessions. In production, `SESSION_SECRET` is mandatory and must be a unique random value with at least 32 bytes, held in the deployment's secret manager.
 
 Run `cd backend && npm run migrate` to apply the user and server-side session migration. Set `SESSION_SECRET` to a unique random value of at least 32 bytes for production. `NODE_ENV=production` enables secure cookies; serve the application over HTTPS and use an exact `FRONTEND_ORIGIN`. The session cookie is HTTP-only, SameSite=Lax, path `/`, and expires after eight hours. Sessions are stored in PostgreSQL and invalidated on sign-out; inactive users are rechecked against the database on protected requests. The browser obtains a session-bound CSRF token from `/api/auth/csrf` and sends it in `X-CSRF-Token` for sign-in, sign-out, and account changes. Authentication requests are rate limited. Same-origin reverse proxying is recommended; cross-origin deployments must use credentials and the exact configured frontend origin.

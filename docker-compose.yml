@@ -29,6 +29,10 @@ services:
   frontend:
     build:
       context: ./frontend
+      args:
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:-}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY:-}
     image: nazarene-frontend:${IMAGE_TAG:-latest}
     restart: unless-stopped
     init: true

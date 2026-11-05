@@ -6,7 +6,7 @@ import { ThemeControl } from './ThemeControl'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../app/AuthProvider'
 import { useState } from 'react'
-import { LogIn, ShieldCheck } from 'lucide-react'
+import { Images, LogIn, Users } from 'lucide-react'
 
 type PageShellProps = {
   children: ReactNode
@@ -21,17 +21,24 @@ export function PageShell({ children, activePage = 'home' }: PageShellProps) {
       <a className="skip-link" href="#main-content">Skip to main content</a>
       <header className="site-header">
         <Container className="header-inner">
-          <a href="/" className="brand-link" aria-label="Church of the Nazarene Remera, home">
-            <Logo />
-            <span className="brand-name">Remera</span>
-          </a>
+          <div className="header-brand-group">
+            <a href="/" className="brand-link" aria-label="Church of the Nazarene Remera, home">
+              <Logo />
+              <span className="brand-name">Remera</span>
+            </a>
+            <ThemeControl />
+          </div>
           <div className="header-actions">
             <nav className="site-nav" aria-label="Main navigation">
               <a href="/" aria-current={activePage === 'home' ? 'page' : undefined}>Home</a>
               <a href="/#gallery" aria-current={activePage === 'album' ? 'page' : undefined}>Gallery</a>
-              {auth.user ? <Link className="staff-nav-link" to="/admin" aria-label={auth.user.role} aria-current={activePage === 'staff' ? 'page' : undefined}><ShieldCheck aria-hidden="true" /><span>{auth.user.role}</span></Link> : <Link className="staff-nav-link" to="/admin/sign-in" aria-label="Staff sign in" aria-current={activePage === 'staff' ? 'page' : undefined}><LogIn aria-hidden="true" /><span>Staff sign in</span></Link>}
+              {auth.user
+                ? <>
+                  <Link className="staff-nav-link" to="/admin/media" aria-label="Media management" aria-current={activePage === 'staff' ? 'page' : undefined}><Images aria-hidden="true" /><span>Media</span></Link>
+                  {auth.user.role === 'SUPER_ADMIN' && <Link className="staff-nav-link" to="/admin" aria-label="Account management" aria-current={activePage === 'staff' ? 'page' : undefined}><Users aria-hidden="true" /><span>Accounts</span></Link>}
+                </>
+                : <Link className="staff-nav-link" to="/admin/sign-in" aria-label="Staff sign in" aria-current={activePage === 'staff' ? 'page' : undefined}><LogIn aria-hidden="true" /><span>Staff sign in</span></Link>}
             </nav>
-            <ThemeControl />
             {auth.user && <button className="sign-out-button" type="button" onClick={() => { setSignOutError(''); void auth.signOut().catch(() => setSignOutError('Sign-out failed. Please try again.')) }}>Sign out</button>}
           </div>
           {signOutError && <span className="sign-out-error" role="alert">{signOutError}</span>}

@@ -33,6 +33,8 @@ function PhotoTile({ photo, onOpen }: { photo: PhotoMedia; onOpen: (photo: Photo
         >
           <img
             src={displayedSource}
+            srcSet={thumbnailSource && !thumbnailFailed ? photo.srcSet : undefined}
+            sizes="(min-width: 1200px) 360px, (min-width: 821px) calc((100vw - 84px) / 3), (min-width: 561px) calc((100vw - 60px) / 2), calc(100vw - 36px)"
             alt=""
             width={photo.width}
             height={photo.height}

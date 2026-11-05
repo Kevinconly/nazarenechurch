@@ -8,6 +8,7 @@ export type CaptionTrack = {
 type MediaBase = {
   id: string
   src: string
+  srcSet?: string
   thumbnailSrc?: string
   caption?: string
   width?: number

@@ -17,7 +17,7 @@ function AlbumCoverImage({ album }: { album: Album }) {
     return <div className="album-card__cover-placeholder" role="img" aria-label={`Cover image unavailable for ${album.title}`} />
   }
 
-  return <img src={cover.src} alt="" width={cover.width} height={cover.height} loading="lazy" onError={() => setSourceFailed(true)} />
+  return <img src={cover.src} srcSet={cover.srcSet} sizes="(min-width: 1208px) 364px, (min-width: 761px) calc((100vw - 76px) / 3), (min-width: 521px) calc((100vw - 56px) / 2), calc(100vw - 36px)" alt="" width={cover.width} height={cover.height} loading="lazy" onError={() => setSourceFailed(true)} />
 }
 
 export function AlbumCard({ album }: { album: Album }) {

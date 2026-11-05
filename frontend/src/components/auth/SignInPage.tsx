@@ -12,7 +12,7 @@ export function SignInPage() {
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  if (!loading && user) return <Navigate to="/admin" replace />
+  if (!loading && user) return <Navigate to={user.role === 'MEDIA_ADMIN' ? '/admin/media' : '/admin'} replace />
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setBusy(true); setError('')

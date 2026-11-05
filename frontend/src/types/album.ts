@@ -3,6 +3,7 @@ export type AlbumStatus = 'draft' | 'published'
 
 export type AlbumCover = {
   src: string
+  srcSet?: string
   alt: string
   width: number
   height: number

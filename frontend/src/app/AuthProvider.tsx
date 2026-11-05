@@ -6,91 +6,89 @@ import {
   useMemo,
   useState,
   type ReactNode,
-} from "react";
-import { authApi, type AuthUser } from "../lib/authApi";
+} from 'react'
+import { authApi, type AuthUser } from '../lib/authApi'
+import { getSupabaseClient } from '../lib/supabase'
 
 type AuthContextValue = {
-  user: AuthUser | null;
-  loading: boolean;
-  csrfToken: string;
-  error: string;
-  signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  refreshCsrf: () => Promise<void>;
-};
-const AuthContext = createContext<AuthContextValue | null>(null);
+  user: AuthUser | null
+  loading: boolean
+  error: string
+  signIn: (email: string, password: string) => Promise<void>
+  signOut: () => Promise<void>
+}
+
+const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [csrfToken, setCsrfToken] = useState("");
-  const [error, setError] = useState("");
-  const refreshCsrf = useCallback(async () => {
-    const response = await authApi.csrf();
-    setCsrfToken(response.csrfToken);
-  }, []);
+  const [user, setUser] = useState<AuthUser | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    let active = true;
-    const onUnauthorized = () => setUser(null);
-    window.addEventListener("auth:unauthorized", onUnauthorized);
-    Promise.all([authApi.me().catch(() => null), authApi.csrf()])
-      .then(([me, csrf]) => {
-        if (!active) return;
-        setUser(me?.user ?? null);
-        setCsrfToken(csrf.csrfToken);
-      })
-      .catch(() => {
-        if (active) setError("Authentication service is unavailable.");
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-      window.removeEventListener("auth:unauthorized", onUnauthorized);
-    };
-  }, []);
+    let active = true
+    let unsubscribe = () => {}
 
-  const signIn = useCallback(
-    async (email: string, password: string) => {
-      setError("");
-      const token = csrfToken || (await authApi.csrf()).csrfToken;
-      const result = await authApi.signIn(email, password, token);
-      setUser(result.user);
-      setCsrfToken(result.csrfToken);
-    },
-    [csrfToken],
-  );
-
-  const signOut = useCallback(async () => {
-    setError("");
-    try {
-      await authApi.signOut(csrfToken);
-    } catch (failure) {
+    async function refreshUser() {
       try {
-        await authApi.me();
-        throw failure;
-      } catch (checkFailure) {
-        if (checkFailure === failure) throw failure;
-        setUser(null);
-        setCsrfToken("");
-        return;
+        const result = await authApi.me()
+        if (active) {
+          setUser(result?.user ?? null)
+          setError('')
+        }
+      } catch {
+        if (active) {
+          setUser(null)
+          setError('Authentication service is unavailable. Check the Supabase configuration.')
+        }
+      } finally {
+        if (active) setLoading(false)
       }
     }
-    setUser(null);
-    setCsrfToken("");
-  }, [csrfToken]);
+
+    try {
+      const client = getSupabaseClient()
+      const { data } = client.auth.onAuthStateChange((_event, session) => {
+        if (!session) {
+          setUser(null)
+          setLoading(false)
+          return
+        }
+        queueMicrotask(() => { if (active) void refreshUser() })
+      })
+      unsubscribe = () => data.subscription.unsubscribe()
+      void refreshUser()
+    } catch {
+      setError('Supabase is not configured. Set VITE_SUPABASE_URL and either VITE_SUPABASE_ANON_KEY or VITE_SUPABASE_PUBLISHABLE_KEY.')
+      setLoading(false)
+    }
+
+    return () => {
+      active = false
+      unsubscribe()
+    }
+  }, [])
+
+  const signIn = useCallback(async (email: string, password: string) => {
+    setError('')
+    const signedInUser = await authApi.signIn(email, password)
+    setUser(signedInUser)
+  }, [])
+
+  const signOut = useCallback(async () => {
+    await authApi.signOut()
+    setUser(null)
+  }, [])
 
   const value = useMemo(
-    () => ({ user, loading, csrfToken, error, signIn, signOut, refreshCsrf }),
-    [user, loading, csrfToken, error, signIn, signOut, refreshCsrf],
-  );
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+    () => ({ user, loading, error, signIn, signOut }),
+    [user, loading, error, signIn, signOut],
+  )
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {
-  const value = useContext(AuthContext);
-  if (!value) throw new Error("useAuth must be used inside AuthProvider");
-  return value;
+  const value = useContext(AuthContext)
+  if (!value) throw new Error('useAuth must be used inside AuthProvider')
+  return value
 }

@@ -3,6 +3,10 @@ dist/
 coverage/
 frontend/.test-dist/
 
+# Supabase CLI local link/cache state; never commit the project binding.
+supabase/.temp/
+supabase/.branches/
+
 # Local reference only: the style guide PDF must never be committed or published.
 **/Church of the Nazarene Style Guide*.pdf
 

@@ -373,6 +373,23 @@
   line-height: 1.7;
 }
 
+@media (min-width: 761px) and (max-width: 1024px) {
+  .album-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .archive-search__selects {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1440px) {
+  .album-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 24px;
+  }
+}
+
 @media (max-width: 760px) {
   .gallery-hero__grid {
     grid-template-columns: minmax(0, 1fr);
@@ -401,21 +418,52 @@
   }
 }
 
+@media (min-width: 521px) and (max-width: 620px) {
+  .header-inner {
+    flex-wrap: wrap;
+    row-gap: 4px;
+    padding-block: 8px;
+  }
+
+  .header-brand-group {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .header-actions {
+    flex: 1 1 100%;
+    justify-content: flex-end;
+  }
+}
+
 @media (max-width: 520px) {
   .site-header .container {
     width: calc(100% - 32px);
+    padding-top: env(safe-area-inset-top);
   }
 
   .header-inner {
     min-height: 70px;
+    flex-wrap: wrap;
+    gap: 7px;
+    padding-block: 8px;
   }
 
-  .header-actions { gap: 10px; }
+  .header-brand-group {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .header-actions {
+    flex: 1 1 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
   .staff-nav-link { display: inline-grid; width: 44px; min-height: 44px; place-items: center; }
   .staff-nav-link svg { display: block; width: 17px; height: 17px; }
   .staff-nav-link span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
 
-  .sign-out-button { min-height: 34px; padding-inline: 7px; font-size: 11px; }
+  .sign-out-button { min-height: 44px; padding-inline: 7px; font-size: 11px; }
 
   .brand-link {
     gap: 9px;
@@ -439,10 +487,6 @@
   .site-nav a {
     font-size: 12px;
   }
-
-  .theme-control { gap: 5px; }
-  .theme-control__label { display: none; }
-  .theme-control select { width: 82px; padding-inline: 7px 19px; font-size: 12px; }
 
   .gallery-hero {
     padding-block: 57px 50px;
@@ -518,11 +562,11 @@
   body { min-width: 0; }
 
   .site-header .container { width: calc(100% - 20px); }
+  .header-actions { flex-wrap: nowrap; }
   .brand-logo { width: 70px; }
   .brand-link { gap: 6px; }
   .brand-name { padding-left: 6px; font-size: 12px; }
   .site-nav a[href="/#gallery"] { display: none; }
-  .theme-control select { width: 70px; padding-inline: 6px 16px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

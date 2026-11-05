@@ -1,0 +1,50 @@
+services:
+  clamav:
+    image: nazarene-clamav:configured
+    build:
+      context: .
+      dockerfile: Dockerfile.clamav
+      args:
+        CLAMAV_BASE_IMAGE: ${CLAMAV_IMAGE:?Set CLAMAV_IMAGE to a vetted, digest-pinned ClamAV image}
+    restart: unless-stopped
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=64m,noexec,nosuid
+      - /var/lib/clamav:size=1g,nosuid
+      - /var/log/clamav:size=16m,noexec,nosuid
+      - /run/clamav:size=16m,noexec,nosuid
+    mem_limit: 3g
+    networks:
+      - media-processing
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      SUPABASE_URL: ${SUPABASE_URL:?Set SUPABASE_URL}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:?Set SUPABASE_SERVICE_ROLE_KEY}
+      CLAMAV_HOST: clamav
+      CLAMAV_PORT: 3310
+      WORKER_CONCURRENCY: 1
+    depends_on:
+      - clamav
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=512m,noexec,nosuid
+    mem_limit: 1g
+    cpus: 1.0
+    networks:
+      - media-processing
+
+networks:
+  media-processing:

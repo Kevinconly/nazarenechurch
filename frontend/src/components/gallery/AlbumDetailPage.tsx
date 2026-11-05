@@ -1,12 +1,14 @@
+import { useEffect, useState } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
-import { getAlbumMedia, getPublishedAlbumBySlug } from '../../lib/albums'
+import { getPublishedAlbum } from '../../lib/archiveApi'
 import { formatAlbumDate } from '../../lib/media'
 import { PageShell } from '../layout/PageShell'
 import { Container } from '../ui/Container'
 import { SectionHeading } from '../ui/SectionHeading'
 import { MediaGrid } from './MediaGrid'
-import type { MediaKind } from '../../types/album'
+import type { Album, MediaKind } from '../../types/album'
+import type { MediaItem } from '../../types/media'
 
 const mediaTypeNames: Record<MediaKind, string> = {
   photo: 'Photographs',
@@ -34,11 +36,60 @@ function AlbumNotFound() {
 
 export function AlbumDetailPage() {
   const { slug } = useParams()
-  const album = slug ? getPublishedAlbumBySlug(slug) : undefined
+  const [album, setAlbum] = useState<Album | null>(null)
+  const [media, setMedia] = useState<readonly MediaItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let active = true
+    setLoading(true)
+    setError('')
+    setAlbum(null)
+    setMedia([])
+    if (!slug) {
+      setLoading(false)
+      return
+    }
+    void getPublishedAlbum(slug)
+      .then((result) => {
+        if (!active) return
+        if (result) {
+          setAlbum(result.album)
+          setMedia(result.media)
+        }
+      })
+      .catch((failure: unknown) => {
+        if (active) setError(failure instanceof Error ? failure.message : 'Unable to load this album.')
+      })
+      .finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
+  }, [slug])
+
+  if (loading) {
+    return <PageShell activePage="album"><main id="main-content" className="album-detail-page"><Container><p role="status">Loading album…</p></Container></main></PageShell>
+  }
+
+  if (error) {
+    return (
+      <PageShell activePage="album">
+        <main id="main-content" className="album-detail-page">
+          <Container>
+            <Link className="back-to-gallery" to="/#gallery"><ArrowLeft size={17} aria-hidden="true" />Back to the gallery</Link>
+            <section className="album-not-found" aria-labelledby="album-load-error-title">
+              <p className="eyebrow">Archive collection</p>
+              <h1 id="album-load-error-title">The album could not be loaded</h1>
+              <p role="alert">{error}</p>
+              <Link className="text-link" to="/#gallery">Return to the gallery</Link>
+            </section>
+          </Container>
+        </main>
+      </PageShell>
+    )
+  }
 
   if (!album) return <AlbumNotFound />
 
-  const media = getAlbumMedia(album.id)
   const eventDate = formatAlbumDate(album.eventDate)
   const mediaCount = album.mediaCount ?? media.length
 

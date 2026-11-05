@@ -8,6 +8,23 @@ CI: https://github.com/Kevinconly/nazarenechurch/actions — latest run **passed
 Read this before making changes. It records what is done, what is deliberately
 not done, and the constraints for continuing.
 
+## 0. Supabase media milestone (current work)
+
+The frontend has since been wired to Supabase Auth/Edge Functions for the
+gallery and media-admin flows. SQL migrations, Edge Functions, an isolated
+worker/ClamAV Compose stack, and responsive gallery styling are present in the
+worktree. This stack has **not** been applied to any Supabase project or
+deployed. The original Express backend and root Compose stack are now a separate
+legacy path and are not the frontend's gallery/auth service. Do not apply the
+migrations or create/bootstrap accounts in any production-like project without
+explicit approval.
+
+Latest changes still require final typecheck/lint/test/build/audit verification.
+The database migrations and Edge Functions need isolated runtime validation.
+No browser automation was available during this milestone, so required
+viewport, keyboard, reduced-motion, interaction, and screenshot checks are
+pending; see `UI_AUDIT.md` and `MEDIA_SECURITY_AUDIT.md` for evidence limits.
+
 ## 1. What is complete
 
 ### Security / access control
