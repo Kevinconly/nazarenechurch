@@ -23,7 +23,7 @@ export function createAdminUsersRouter(users: UserRepository) {
       const rawId = request.params.id
       if (typeof rawId !== 'string') throw new HttpError(400, 'User identifier is invalid.')
       const id = userId(rawId)
-      if (id === request.authUser!.id) throw new HttpError(400, 'You cannot change your own role or account status.')
+      if (id === request.authUser!.id.toLowerCase()) throw new HttpError(400, 'You cannot change your own role or account status.')
       const values = updateUser(request.body)
       if (values.role !== undefined && !roleHasPermission(request.authUser!.role, 'users:update-role')) throw new HttpError(403, 'You do not have permission to perform this action.')
       if (values.active !== undefined && !roleHasPermission(request.authUser!.role, 'users:update-status')) throw new HttpError(403, 'You do not have permission to perform this action.')

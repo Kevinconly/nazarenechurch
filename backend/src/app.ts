@@ -1,5 +1,7 @@
 import cors from 'cors'
 import express, { type ErrorRequestHandler } from 'express'
+import helmet from 'helmet'
+import { rateLimit } from 'express-rate-limit'
 import { config } from './config/env.js'
 import { healthRouter } from './routes/health.js'
 import { createAlbumsRouter } from './routes/albums.js'
@@ -12,7 +14,7 @@ import { createAuthRouter } from './routes/auth.js'
 import { createAdminUsersRouter } from './routes/adminUsers.js'
 import { UserRepository } from './auth/userRepository.js'
 import { getPool } from './db/pool.js'
-import { createHash } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 
 function createDatabaseSessionStore(): session.Store {
   let store: session.Store | undefined
@@ -49,10 +51,48 @@ export function createApp(repository: ArchiveRepository = new PostgresArchiveRep
   const app = express()
   const users = options.users ?? new UserRepository()
   app.disable('x-powered-by')
+  // Use the flat query parser so nested/duplicate parameters cannot smuggle
+  // objects into validation helpers.
+  app.set('query parser', 'simple')
+  // Escape HTML-significant characters in JSON responses as defence in depth
+  // for clients that render API values without context-aware escaping.
+  app.set('json escape', true)
   if (config.trustProxyHops > 0) app.set('trust proxy', config.trustProxyHops)
-  app.use(cors({ origin: config.allowedOrigin, credentials: true, methods: ['GET', 'POST', 'PATCH', 'OPTIONS'], allowedHeaders: ['Content-Type', 'X-CSRF-Token'], optionsSuccessStatus: 204 }))
-  app.use((request, _response, next) => { console.info(`${new Date().toISOString()} ${request.method} ${request.path}`); next() })
-  app.use(express.json({ limit: '16kb' }))
+  app.use((request, response, next) => {
+    const requestId = randomUUID()
+    response.setHeader('X-Request-Id', requestId)
+    const startedAt = process.hrtime.bigint()
+    response.on('finish', () => {
+      const durationMs = Math.round(Number(process.hrtime.bigint() - startedAt) / 1_000_000)
+      // Log the path without the query string so search terms and tokens are not persisted.
+      console.info(JSON.stringify({ level: 'info', requestId, method: request.method, path: request.originalUrl.split('?', 1)[0], status: response.statusCode, durationMs }))
+    })
+    next()
+  })
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'none'"],
+        baseUri: ["'none'"],
+        frameAncestors: ["'none'"],
+        formAction: ["'none'"],
+      },
+    },
+    crossOriginResourcePolicy: { policy: 'same-site' },
+    frameguard: { action: 'deny' },
+    hsts: config.isProduction ? { maxAge: 31_536_000, includeSubDomains: true } : false,
+    referrerPolicy: { policy: 'no-referrer' },
+  }))
+  app.use(cors({ origin: config.allowedOrigin, credentials: true, maxAge: 600, methods: ['GET', 'POST', 'PATCH', 'OPTIONS'], allowedHeaders: ['Content-Type', 'X-CSRF-Token'], optionsSuccessStatus: 204 }))
+  app.use('/api', rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 600,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    message: { error: 'Too many requests. Try again later.', status: 429 },
+    skip: (request) => request.path.startsWith('/health'),
+  }))
+  app.use(express.json({ limit: '16kb', strict: true }))
   app.use(session({
     name: 'remera.sid',
     secret: options.sessionSecret ?? config.sessionSecret,
@@ -61,6 +101,10 @@ export function createApp(repository: ArchiveRepository = new PostgresArchiveRep
     saveUninitialized: false,
     cookie: { httpOnly: true, secure: options.cookieSecure ?? config.sessionCookieSecure, sameSite: 'lax', path: '/', maxAge: config.sessionMaxAgeMs },
   }))
+  app.use(['/api/auth', '/api/admin'], (_request, response, next) => {
+    response.setHeader('Cache-Control', 'no-store')
+    next()
+  })
   app.use('/api/health', healthRouter)
   app.use('/api/albums', createAlbumsRouter(repository))
   app.use('/api/auth', createAuthRouter(users))
@@ -80,11 +124,21 @@ export function createApp(repository: ArchiveRepository = new PostgresArchiveRep
       response.status(409).json({ error: 'At least one active Administrator must remain.', status: 409 })
       return
     }
+    if (typeof error === 'object' && error !== null && 'type' in error && (error.type === 'entity.too.large' || error.type === 'entity.parse.failed')) {
+      const status = error.type === 'entity.too.large' ? 413 : 400
+      response.status(status).json({ error: status === 413 ? 'Request body is too large.' : 'Request body contains invalid JSON.', status })
+      return
+    }
     if (error instanceof SyntaxError && 'body' in error) {
       response.status(400).json({ error: 'Request body contains invalid JSON.', status: 400 })
       return
     }
-    console.error('Request failed:', error instanceof Error ? error.message : error)
+    const requestId = response.getHeader('X-Request-Id')
+    console.error(JSON.stringify({
+      level: 'error',
+      requestId: typeof requestId === 'string' ? requestId : undefined,
+      message: error instanceof Error ? error.message : String(error),
+    }))
     response.status(500).json({ error: 'Internal server error', status: 500 })
   }
   app.use(errorHandler)

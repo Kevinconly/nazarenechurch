@@ -9,13 +9,25 @@ if (!config.databaseUrl || !URL.canParse(config.databaseUrl)
 }
 
 const server = app.listen(config.port, () => console.info(`Archive API listening on http://localhost:${config.port}`))
+// Bound slow or stalled clients so they cannot hold sockets indefinitely.
+server.requestTimeout = 30_000
+server.headersTimeout = 20_000
+server.keepAliveTimeout = 5_000
+server.maxRequestsPerSocket = 1_000
 
 function shutdown(signal: string) {
   console.info(`${signal} received; closing HTTP server.`)
+  const forceExit = setTimeout(() => {
+    console.error('Graceful shutdown timed out; exiting.')
+    process.exit(1)
+  }, 10_000)
+  forceExit.unref()
   server.close((error) => {
     void closeSessionStore().then(() => closePool()).then(() => {
+      clearTimeout(forceExit)
       if (error) { console.error('Server shutdown failed:', error); process.exitCode = 1 }
     }).catch((closeError: unknown) => {
+      clearTimeout(forceExit)
       console.error('Database shutdown failed:', closeError)
       process.exitCode = 1
     })

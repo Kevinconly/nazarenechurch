@@ -58,6 +58,71 @@ npm run test
 npm run build
 ```
 
+## CI/CD
+
+`.github/workflows/ci.yml` runs on every push to `main` and every pull request:
+
+- Backend: `npm ci`, typecheck, tests, build, and a production dependency audit.
+- Frontend: `npm ci`, typecheck, lint, tests, build, and a production dependency audit.
+- Containers: builds both images and scans them with Trivy; critical
+  vulnerabilities fail the job.
+
+Dependabot is configured for both npm projects, both Dockerfiles, and GitHub
+Actions. Run the same checks locally with the commands in the sections above plus
+`npm audit --omit=dev --audit-level=high` in each project.
+
+## Container deployment
+
+The repository includes a multi-stage, non-root backend image, an unprivileged
+nginx frontend image, and a Compose file:
+
+```sh
+cp .env.example .env
+# Set DATABASE_URL, SESSION_SECRET, FRONTEND_ORIGIN, and TRUST_PROXY_HOPS.
+docker compose build
+docker compose run --rm backend node dist/db/migrate.js
+docker compose run --rm backend node dist/auth/provisionAdmin.js
+docker compose up -d
+```
+
+Only the frontend port (`HTTP_PORT`, default 8080) is published. The backend is
+reachable only on the internal Compose network. Both containers use read-only
+root filesystems, dropped capabilities, and `no-new-privileges`. The nginx layer
+adds CSP, HSTS, framing, referrer, permissions, and MIME-sniffing headers, and
+proxies `/api` to the backend.
+
+Production mode requires HTTPS in front of the stack and a real secret manager.
+See [docs/AWS_PRODUCTION.md](docs/AWS_PRODUCTION.md) for the AWS reference
+architecture, WAF/RDS/IAM/CloudWatch checklist, and migration/provisioning steps.
+The application-level threat mapping is in [SECURITY.md](SECURITY.md).
+
+## Production readiness and capability matrix
+
+| Capability | Status | Notes |
+| --- | --- | --- |
+| File uploads | **Not implemented** | No multipart handling or storage adapter. JSON bodies are limited to 16 KB. Do not publish an upload endpoint until S3/presigned uploads, magic-byte validation, size limits, malware scanning, and image re-encoding are designed. |
+| Account management | **Partial** | Sign-in/out, server-side sessions, CSRF, Administrator create/list, role and status changes, self-change protection, and last-Administrator protection. Missing password reset, invitations, email verification, MFA, a durable audit log, and paginated user listing. |
+| Public single-photo link | **Not implemented** | Public media is exposed only as a paginated list at `GET /api/albums/:slug/media`. There is no single-media route or photo permalink. |
+| Custom albums / share links | **Partial** | Published albums are addressable by slug at `/gallery/:slug` and through `GET /api/albums/:slug/media`. Drafts return 404. There are no private share tokens, passwords, or expiring links. |
+| Search by event, category, year, or title | **Browser-only** | `frontend/src/lib/archiveSearch.ts` filters local album records by title, event name, category, and valid event year. The API has no search/filter parameters and rejects unknown query parameters. The production frontend currently uses an empty local album set, so it is not yet wired to the live API. |
+| Input validation | **Yes, current surface** | Every route validates the inputs it consumes; see the endpoint table below. |
+
+### Endpoint validation
+
+| Endpoint | Validation |
+| --- | --- |
+| `GET /api/health`, `GET /api/health/ready` | No request input; readiness checks the database and returns 503 when unavailable. |
+| `GET /api/albums` | Only `page` and `pageSize` allowed; positive safe integers; page size at most 100. |
+| `GET /api/albums/:slug/media` | Album slug restricted to lowercase words separated by single hyphens; pagination as above. |
+| `GET /api/auth/csrf` | No request input; issues a session-bound hashed CSRF token. |
+| `POST /api/auth/sign-in` | Exact `email` and `password` keys only; email format/length; password byte limit; CSRF required; rate limited. |
+| `GET /api/auth/me` | Session only; rechecks the active account on every request. |
+| `POST /api/auth/sign-out` | CSRF required; no body fields. |
+| `GET /api/admin/users` | Administrator session and permission required. |
+| `POST /api/admin/users` | Exact `email`, `password`, and `role` keys only; role allow-list; CSRF; Administrator permission. |
+| `PATCH /api/admin/users/:id` | UUID format and canonicalization; exact `role`/`active` keys; role/boolean validation; CSRF; self-change and last-Administrator protection. |
+| Unknown routes | JSON 404. Oversized bodies return 413; malformed JSON returns 400. |
+
 ## Brand and design
 
 Original supplied logo files are in `frontend/public/brand/`; see `frontend/src/styles/brand-assets.md` for variant guidance. The official Church of the Nazarene style guide PDF is kept as a local reference only and is intentionally excluded from the repository and the built site. The interface uses the supplied neutral and accent palette, with Lato bundled locally for body and heading use. Brandon Grotesque is not loaded because no licensed font files were supplied. A Remera church-name logo was not supplied, so the local church name appears as surrounding page text. Logo artwork has not been recreated or recolored.

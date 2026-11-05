@@ -4,6 +4,7 @@ import { isRole } from './roles.js'
 export function credentials(body: unknown): { email: string; password: string } {
   if (!body || typeof body !== 'object' || Array.isArray(body)) throw new HttpError(400, 'Email and password are required.')
   const value = body as Record<string, unknown>
+  if (Object.keys(value).some((key) => !['email', 'password'].includes(key))) throw new HttpError(400, 'Provide only an email and password.')
   if (typeof value.email !== 'string' || value.email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.email.trim()) || typeof value.password !== 'string' || value.password.length < 1 || Buffer.byteLength(value.password, 'utf8') > 72) {
     throw new HttpError(400, 'Email or password format is invalid.')
   }
@@ -37,5 +38,7 @@ export function updateUser(body: unknown) {
 
 export function userId(value: string): string {
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)) throw new HttpError(400, 'User identifier is invalid.')
-  return value
+  // PostgreSQL compares UUID values without regard to hexadecimal case. Canonicalize
+  // the identifier so equality checks in application code match the database.
+  return value.toLowerCase()
 }

@@ -17,6 +17,7 @@ if (!Number.isInteger(trustProxyHops) || trustProxyHops < 0 || trustProxyHops > 
 
 export const config = {
   port,
+  isProduction: production,
   allowedOrigin,
   databaseUrl: process.env.DATABASE_URL,
   databaseSslCaFile: process.env.DATABASE_SSL_CA_FILE?.trim() || undefined,

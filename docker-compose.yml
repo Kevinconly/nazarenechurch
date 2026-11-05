@@ -1,0 +1,55 @@
+name: nazarene-archive
+
+services:
+  backend:
+    build:
+      context: ./backend
+    image: nazarene-backend:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    init: true
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: "3001"
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:?Set FRONTEND_ORIGIN to the public HTTPS origin}
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL to the PostgreSQL connection URL}
+      SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET to at least 32 random bytes}
+      DATABASE_SSL_CA_FILE: ${DATABASE_SSL_CA_FILE:-}
+      TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:-1}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - app
+
+  frontend:
+    build:
+      context: ./frontend
+    image: nazarene-frontend:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    init: true
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${HTTP_PORT:-8080}:8080"
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+      - /var/log/nginx
+      - /var/run
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - app
+
+networks:
+  app:
+    driver: bridge

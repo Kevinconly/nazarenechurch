@@ -79,3 +79,22 @@ test('returns an empty page beyond the available result range', async () => {
     assert.deepEqual(await response.json(), { items: [], page: 2, pageSize: 1, total: 1, totalPages: 1 })
   })
 })
+
+test('rejects unsupported query parameters instead of ignoring them', async () => {
+  await withApi(async (base) => {
+    const response = await fetch(`${base}/api/albums?search=community`)
+    assert.equal(response.status, 400)
+    assert.deepEqual(await response.json(), { error: 'Request contains an unsupported query parameter.', status: 400 })
+  })
+})
+
+test('sets baseline security headers and a request identifier', async () => {
+  await withApi(async (base) => {
+    const response = await fetch(`${base}/api/albums`)
+    assert.equal(response.status, 200)
+    assert.equal(response.headers.get('x-content-type-options'), 'nosniff')
+    assert.equal(response.headers.get('x-frame-options'), 'DENY')
+    assert.equal(response.headers.get('referrer-policy'), 'no-referrer')
+    assert.match(response.headers.get('x-request-id') ?? '', /^[0-9a-f-]{36}$/)
+  })
+})
